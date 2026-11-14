@@ -108,7 +108,7 @@ Set PANGOLIN_SCP_BINARY to the full path of scp(1) to override PATH lookup on al
 				}
 			}
 
-			pt := sshcmd.ParseOpenSSHPassThrough(rawSCPArgs())
+			pt := parseSCPPassThrough(rawSCPArgs())
 
 			// When the auth daemon is the native SSH server, restrict
 			// pass-through options to the subset it actually supports.
