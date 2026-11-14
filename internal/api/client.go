@@ -145,13 +145,23 @@ func (c *Client) request(method, endpoint string, payload interface{}, result in
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
+	// A non-2xx response without a JSON envelope (e.g. from a proxy) is still
+	// an error; only empty 2xx bodies count as success.
+	failed := resp.StatusCode < 200 || resp.StatusCode >= 300
+
 	if len(bodyBytes) == 0 {
+		if failed {
+			return createErrorResponse(&APIResponse{}, resp.StatusCode, getDefaultErrorMessage)
+		}
 		return nil
 	}
 
 	// Parse the API response structure
 	var apiResp APIResponse
 	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
+		if failed {
+			return createErrorResponse(&APIResponse{}, resp.StatusCode, getDefaultErrorMessage)
+		}
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
@@ -818,7 +828,12 @@ func LoginWithCookie(client *Client, req LoginRequest) (*LoginResponse, string, 
 		return nil, "", fmt.Errorf("failed to read response: %w", err)
 	}
 
+	failed := resp.StatusCode < 200 || resp.StatusCode >= 300
+
 	if len(bodyBytes) == 0 {
+		if failed {
+			return nil, "", createErrorResponse(&APIResponse{}, resp.StatusCode, getDefaultErrorMessage)
+		}
 		// Return empty response but with token if available
 		return &response, sessionToken, nil
 	}
@@ -826,6 +841,9 @@ func LoginWithCookie(client *Client, req LoginRequest) (*LoginResponse, string, 
 	// Parse the API response
 	apiResp, err := parseAPIResponseBody(bodyBytes)
 	if err != nil {
+		if failed {
+			return nil, "", createErrorResponse(&APIResponse{}, resp.StatusCode, getDefaultErrorMessage)
+		}
 		return nil, "", err
 	}
 
