@@ -240,16 +240,20 @@ func mainCommandPreRun(cmd *cobra.Command, args []string) error {
 	// Check for updates asynchronously
 	if !cfg.DisableUpdateCheck {
 		logger.Debug("Starting update check for %q command", cmdName)
-		versionpkg.CheckForUpdateAsync(func(release *versionpkg.GitHubRelease) {
-			logger.Warning("A new version is available: %s (current: %s)", release.TagName, versionpkg.Version)
-			logger.Info("Run 'pangolin update' to update to the latest version")
-			fmt.Println()
-		})
+		versionpkg.CheckForUpdateAsync(showUpdateAvailable)
 	} else {
 		logger.Debug("Update check disabled by configuration")
 	}
 
 	return nil
+}
+
+// showUpdateAvailable prints the update banner to stderr so it never mixes
+// into stdout that other programs parse (e.g. sshd reading principals).
+func showUpdateAvailable(release *versionpkg.GitHubRelease) {
+	fmt.Fprintf(os.Stderr, "A new version is available: %s (current: %s)\n", release.TagName, versionpkg.Version)
+	fmt.Fprintln(os.Stderr, "Run 'pangolin update' to update to the latest version")
+	fmt.Fprintln(os.Stderr)
 }
 
 // Make sure all required directories exist once

@@ -2,6 +2,7 @@ package notice
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -84,9 +85,10 @@ func printBanner(lines []string) {
 		content.WriteString(bannerBodyStyle.Render(body))
 	}
 
-	fmt.Println()
-	fmt.Println(bannerBoxStyle.Render(content.String()))
-	fmt.Println()
+	// Write to stderr so notices never corrupt machine-readable stdout.
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, bannerBoxStyle.Render(content.String()))
+	fmt.Fprintln(os.Stderr)
 }
 
 func noticeMatchesVersion(notice Notice) bool {
